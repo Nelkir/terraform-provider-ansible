@@ -110,7 +110,13 @@ func (r *GalaxyResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	if _, err := os.Stat(data.Path.ValueString()); err != nil {
+	path := data.Path.ValueString()
+	if path == "" {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
+	if _, err := os.Stat(path); err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			resp.Diagnostics.AddError(
 				"can't read the role directory",
@@ -119,52 +125,43 @@ func (r *GalaxyResource) Read(ctx context.Context, req resource.ReadRequest, res
 			return
 		}
 
-		data.Path = types.StringUnknown()
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
+	out, err := exec.CommandContext(
+		ctx,
+		data.AnsibleGalaxyBinary.ValueString(),
+		"list",
+		"--roles-path",
+		data.Path.ValueString(),
+	).CombinedOutput()
+	outStr := string(out)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"can't list the roles",
+			"Unable to list the roles: unexpected error: "+
+				err.Error()+": "+outStr,
+		)
+		return
 	}
 
 	found := false
-	if data.Path.ValueString() != "" {
-		out, err := exec.CommandContext(
-			ctx,
-			data.AnsibleGalaxyBinary.ValueString(),
-			"list",
-			"--roles-path",
-			data.Path.ValueString(),
-		).CombinedOutput()
-		outStr := string(out)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"can't list the roles",
-				"Unable to list the roles: unexpected error: "+
-					err.Error()+": "+outStr,
-			)
-			return
-		}
-
-		name := r.localGalaxyName(data)
-		for _, l := range strings.Split(outStr, "\n") {
-			if strings.Contains(l, name) {
+	name := r.localGalaxyName(data)
+	for _, l := range strings.Split(outStr, "\n") {
+		s := strings.Split(l, ", ")
+		if len(s) == 2 {
+			if strings.Contains(s[0], name) {
 				found = true
 
-				if data.Version.ValueString() != "" {
-					if !strings.Contains(l, data.Version.ValueString()) {
-						data.Version = types.StringUnknown()
-					}
-				}
+				data.Version = types.StringValue(strings.TrimSpace(s[1]))
 			}
 		}
 	}
 
 	if !found {
-		data.Role = types.StringUnknown()
-
-		if data.Version.ValueString() != "" {
-			data.Version = types.StringUnknown()
-		}
-
-		if data.Name.ValueString() != "" {
-			data.Name = types.StringUnknown()
-		}
+		resp.State.RemoveResource(ctx)
+		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

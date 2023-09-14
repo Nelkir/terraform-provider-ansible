@@ -7,8 +7,11 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
+
+var hostPath string
 
 func TestAccHostResource(t *testing.T) {
 	resource.Test(t, resource.TestCase{
@@ -17,6 +20,27 @@ func TestAccHostResource(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
+				Config: testAccHostResourceConfig("0.0.0.0"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					func(s *terraform.State) error {
+						return testAccHostResourceAssertConfig(s, "0.0.0.0")
+					},
+				),
+			},
+			// Ensure idempotency
+			{
+				Config: testAccHostResourceConfig("0.0.0.0"),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()},
+				},
+			},
+			// Ensure the resources are recreated if they're missing
+			{
+				PreConfig: func() {
+					if err := os.RemoveAll(hostPath); err != nil {
+						t.Fatal("remove the galaxy resource" + err.Error())
+					}
+				},
 				Config: testAccHostResourceConfig("0.0.0.0"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					func(s *terraform.State) error {
@@ -66,6 +90,8 @@ func testAccHostResourceConfig(configurableAttribute string) string {
 func testAccHostResourceAssertConfig(s *terraform.State, configurableAttribute string) error {
 	host := s.RootModule().Resources["ansible_host.test"].Primary
 	path := host.Attributes["inventory_path"]
+
+	hostPath = path
 
 	b, err := os.ReadFile(path)
 	if err != nil {

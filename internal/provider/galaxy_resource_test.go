@@ -13,6 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
+var galaxyPath string
+
 func TestAccGalaxyResource(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -20,7 +22,7 @@ func TestAccGalaxyResource(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccGalaxyResourceConfig("singleplatform-eng.users", "v1.2.5"),
+				Config: testAccGalaxyResourceConfig("v1.2.5"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					func(s *terraform.State) error {
 						return testAccGalaxyResourceAssertConfig(s, "my.role", "v1.2.5")
@@ -29,14 +31,28 @@ func TestAccGalaxyResource(t *testing.T) {
 			},
 			// Ensure idempotency
 			{
-				Config: testAccGalaxyResourceConfig("singleplatform-eng.users", "v1.2.5"),
+				Config: testAccGalaxyResourceConfig("v1.2.5"),
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{plancheck.ExpectEmptyPlan()},
 				},
 			},
+			// Ensure the resources are recreated if they're missing
+			{
+				PreConfig: func() {
+					if err := os.RemoveAll(galaxyPath); err != nil {
+						t.Fatal("remove the galaxy resource" + err.Error())
+					}
+				},
+				Config: testAccGalaxyResourceConfig("v1.2.5"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					func(s *terraform.State) error {
+						return testAccGalaxyResourceAssertConfig(s, "my.role", "v1.2.5")
+					},
+				),
+			},
 			// Update and Read Testing
 			{
-				Config: testAccGalaxyResourceConfig("singleplatform-eng.users", "v1.2.6"),
+				Config: testAccGalaxyResourceConfig("v1.2.6"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					func(s *terraform.State) error {
 						return testAccGalaxyResourceAssertConfig(s, "my.role", "v1.2.6")
@@ -62,7 +78,8 @@ func TestAccGalaxyResource(t *testing.T) {
 	})
 }
 
-func testAccGalaxyResourceConfig(role string, version string) string {
+func testAccGalaxyResourceConfig(version string) string {
+	role := "singleplatform-eng.users"
 	return fmt.Sprintf(`
 	resource "ansible_galaxy" "test" {
 		role = "%s"
@@ -75,6 +92,8 @@ func testAccGalaxyResourceConfig(role string, version string) string {
 func testAccGalaxyResourceAssertConfig(s *terraform.State, name, version string) error {
 	host := s.RootModule().Resources["ansible_galaxy.test"].Primary
 	path := host.Attributes["path"]
+
+	galaxyPath = path
 
 	out, err := exec.Command("ansible-galaxy", "list", "--roles-path", path).CombinedOutput()
 	if err != nil {

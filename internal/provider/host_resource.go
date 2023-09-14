@@ -110,32 +110,27 @@ func (r *HostResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	}
 
 	inventoryPath := data.InventoryPath.ValueString()
-	if inventoryPath != "" {
-		b, err := os.ReadFile(inventoryPath)
-		if err != nil {
-			if !errors.Is(err, os.ErrNotExist) {
-				resp.Diagnostics.AddError(
-					"can't read inventory file",
-					"unable to read the inventory file: unexpected error: "+err.Error(),
-				)
+	if inventoryPath == "" {
+		resp.State.RemoveResource(ctx)
+		return
+	}
 
-				return
-			}
-
-			data.InventoryPath = types.StringUnknown()
-			data.InventorySha256Sum = types.StringUnknown()
-
-			resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	b, err := os.ReadFile(inventoryPath)
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			resp.Diagnostics.AddError(
+				"can't read inventory file",
+				"unable to read the inventory file: unexpected error: "+err.Error(),
+			)
 
 			return
 		}
 
-		data.InventorySha256Sum = types.StringValue(sha256Sum(b))
-
-	} else {
-		// Clear sha256 sum
-		data.InventorySha256Sum = types.StringUnknown()
+		resp.State.RemoveResource(ctx)
+		return
 	}
+
+	data.InventorySha256Sum = types.StringValue(sha256Sum(b))
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
