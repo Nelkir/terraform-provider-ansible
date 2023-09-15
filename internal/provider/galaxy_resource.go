@@ -155,6 +155,7 @@ func (r *GalaxyResource) Read(ctx context.Context, req resource.ReadRequest, res
 				found = true
 
 				data.Version = types.StringValue(strings.TrimSpace(s[1]))
+				break
 			}
 		}
 	}
