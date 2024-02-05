@@ -15,4 +15,5 @@ docs:
 
 .PHONY: build
 build:
-	go build -o terraform-provider-ansible
+	go build -o terraform-provider-ansible-linux
+	GOOS=windows go build -o terraform-provider-ansible-windows.exe

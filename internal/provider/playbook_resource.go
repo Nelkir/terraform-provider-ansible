@@ -35,40 +35,49 @@ func NewPlaybookResource() resource.Resource {
 type PlaybookResource struct{}
 
 type PlaybookResourceModel struct {
-	Playbook                 types.String `tfsdk:"playbook"`
-	PlaybookSha256Sum        types.String `tfsdk:"playbook_sha256_sum"`
-	Timeout                  types.Number `tfsdk:"timeout"`
-	OnDestroyPlaybook        types.String `tfsdk:"on_destroy_playbook"`
-	OnDestroyTimeout         types.Number `tfsdk:"on_destroy_timeout"`
-	OnDestroyFailureContinue types.Bool   `tfsdk:"on_destroy_failure_continue"`
 	AnsiblePlaybookBinary    types.String `tfsdk:"ansible_playbook_binary"`
-	Name                     types.String `tfsdk:"name"`
-	Groups                   types.List   `tfsdk:"groups"`
-	RolesDirectories         types.List   `tfsdk:"roles_directories"`
-	ExtraInventoryFiles      types.List   `tfsdk:"extra_inventory_files"`
-	Replayable               types.Bool   `tfsdk:"replayable"`
-	IgnorePlaybookFailure    types.Bool   `tfsdk:"ignore_playbook_failure"`
-	Verbosity                types.Number `tfsdk:"verbosity"`
-	Tags                     types.List   `tfsdk:"tags"`
-	Limit                    types.List   `tfsdk:"limit"`
+	AnsiblePlaybookErr       types.String `tfsdk:"ansible_playbook_err"`
+	AnsiblePlaybookOutput    types.String `tfsdk:"ansible_playbook_output"`
+	Args                     types.List   `tfsdk:"args"`
+	Become                   types.Bool   `tfsdk:"ansible_playbook_become"`
 	CheckMode                types.Bool   `tfsdk:"check_mode"`
 	DiffMode                 types.Bool   `tfsdk:"diff_mode"`
-	ForceHandlers            types.Bool   `tfsdk:"force_handlers"`
+	ExtraInventoryFiles      types.List   `tfsdk:"extra_inventory_files"`
 	ExtraVars                types.String `tfsdk:"extra_vars"`
+	ForceHandlers            types.Bool   `tfsdk:"force_handlers"`
+	Groups                   types.List   `tfsdk:"groups"`
+	IgnorePlaybookFailure    types.Bool   `tfsdk:"ignore_playbook_failure"`
+	Limit                    types.List   `tfsdk:"limit"`
+	Name                     types.String `tfsdk:"name"`
+	OnDestroyFailureContinue types.Bool   `tfsdk:"on_destroy_failure_continue"`
+	OnDestroyPlaybook        types.String `tfsdk:"on_destroy_playbook"`
+	OnDestroyTimeout         types.Number `tfsdk:"on_destroy_timeout"`
+	Playbook                 types.String `tfsdk:"playbook"`
+	PlaybookSha256Sum        types.String `tfsdk:"playbook_sha256_sum"`
+	Replayable               types.Bool   `tfsdk:"replayable"`
+	RolesDirectories         types.List   `tfsdk:"roles_directories"`
+	Tags                     types.List   `tfsdk:"tags"`
+	Timeout                  types.Number `tfsdk:"timeout"`
 	VarFiles                 types.List   `tfsdk:"var_files"`
 	VaultFiles               types.List   `tfsdk:"vault_files"`
-	VaultPasswordFile        types.String `tfsdk:"vault_password_file"`
 	VaultID                  types.String `tfsdk:"vault_id"`
-	Args                     types.List   `tfsdk:"args"`
-	AnsiblePlaybookOutput    types.String `tfsdk:"ansible_playbook_output"`
-	AnsiblePlaybookErr       types.String `tfsdk:"ansible_playbook_err"`
+	VaultPasswordFile        types.String `tfsdk:"vault_password_file"`
+	Verbosity                types.Number `tfsdk:"verbosity"`
 }
 
-func (r *PlaybookResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *PlaybookResource) Metadata(
+	ctx context.Context,
+	req resource.MetadataRequest,
+	resp *resource.MetadataResponse,
+) {
 	resp.TypeName = req.ProviderTypeName + "_playbook"
 }
 
-func (r *PlaybookResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *PlaybookResource) Schema(
+	ctx context.Context,
+	req resource.SchemaRequest,
+	resp *resource.SchemaResponse,
+) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
 		MarkdownDescription: "Playbook resource",
@@ -138,6 +147,11 @@ func (r *PlaybookResource) Schema(ctx context.Context, req resource.SchemaReques
 					"Set to 'true' if the desired playbook is meant to fail, " +
 					"but still want the resource to run successfully.",
 				Optional: true,
+			},
+			"become": schema.BoolAttribute{
+				MarkdownDescription: "Run playbook with become flag (true/false).",
+				Optional:            true,
+				Default:             booldefault.StaticBool(false),
 			},
 
 			// ansible execution commands
@@ -231,10 +245,18 @@ func (r *PlaybookResource) Schema(ctx context.Context, req resource.SchemaReques
 	}
 }
 
-func (r *PlaybookResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *PlaybookResource) Configure(
+	ctx context.Context,
+	req resource.ConfigureRequest,
+	resp *resource.ConfigureResponse,
+) {
 }
 
-func (r *PlaybookResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *PlaybookResource) Create(
+	ctx context.Context,
+	req resource.CreateRequest,
+	resp *resource.CreateResponse,
+) {
 	var data PlaybookResourceModel
 
 	// Read Terraform plan data into the model
@@ -263,7 +285,11 @@ func (r *PlaybookResource) Create(ctx context.Context, req resource.CreateReques
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *PlaybookResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *PlaybookResource) Read(
+	ctx context.Context,
+	req resource.ReadRequest,
+	resp *resource.ReadResponse,
+) {
 	var data PlaybookResourceModel
 
 	// Read Terraform plan data into the model
@@ -286,7 +312,11 @@ func (r *PlaybookResource) Read(ctx context.Context, req resource.ReadRequest, r
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *PlaybookResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *PlaybookResource) Update(
+	ctx context.Context,
+	req resource.UpdateRequest,
+	resp *resource.UpdateResponse,
+) {
 	var data PlaybookResourceModel
 
 	// Read Terraform plan data into the model
@@ -317,7 +347,11 @@ func (r *PlaybookResource) Update(ctx context.Context, req resource.UpdateReques
 
 // TODO: EXISTS (REPLAYABLE)
 
-func (r *PlaybookResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *PlaybookResource) Delete(
+	ctx context.Context,
+	req resource.DeleteRequest,
+	resp *resource.DeleteResponse,
+) {
 	var data PlaybookResourceModel
 
 	// Read Terraform plan data into the model
@@ -339,7 +373,10 @@ func (r *PlaybookResource) Delete(ctx context.Context, req resource.DeleteReques
 	}
 }
 
-func (r *PlaybookResource) computeArgs(ctx context.Context, data *PlaybookResourceModel) ([]string, diag.Diagnostics) {
+func (r *PlaybookResource) computeArgs(
+	ctx context.Context,
+	data *PlaybookResourceModel,
+) ([]string, diag.Diagnostics) {
 	args := []string{}
 	diags := diag.Diagnostics{}
 
@@ -411,6 +448,10 @@ func (r *PlaybookResource) computeArgs(ctx context.Context, data *PlaybookResour
 		args = append(args, "--diff")
 	}
 
+	if data.Become.ValueBool() {
+		args = append(args, "--become")
+	}
+
 	varFiles := make([]types.String, 0, len(data.VarFiles.Elements()))
 	d = data.VarFiles.ElementsAs(ctx, &varFiles, false)
 	if d.HasError() {
@@ -465,7 +506,10 @@ func (r *PlaybookResource) computeArgs(ctx context.Context, data *PlaybookResour
 	return args, diags
 }
 
-func (r *PlaybookResource) runPlaybook(ctx context.Context, data *PlaybookResourceModel) diag.Diagnostics {
+func (r *PlaybookResource) runPlaybook(
+	ctx context.Context,
+	data *PlaybookResourceModel,
+) diag.Diagnostics {
 	args, diags := r.computeArgs(ctx, data)
 	if diags.HasError() {
 		return diags
