@@ -17,24 +17,49 @@ func TestAccPlaybookResouce(t *testing.T) {
 			{
 				Config: testAccPlaybookResourceConfig(),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ansible_playbook.test", "args.#", "17"),
+					resource.TestCheckResourceAttr("ansible_playbook.test", "args.#", "18"),
 					resource.TestCheckResourceAttr("ansible_playbook.test", "args.0", "-vvvv"),
-					resource.TestCheckResourceAttr("ansible_playbook.test", "args.1", "--force-handlers"),
+					resource.TestCheckResourceAttr(
+						"ansible_playbook.test",
+						"args.1",
+						"--force-handlers",
+					),
 					resource.TestCheckResourceAttr("ansible_playbook.test", "args.2", "-i"),
 					resource.TestCheckResourceAttr("ansible_playbook.test", "args.3", "localhost,"),
 					resource.TestCheckResourceAttr("ansible_playbook.test", "args.4", "-i"),
-					resource.TestCheckResourceAttr("ansible_playbook.test", "args.5", "./.inventory.yml"),
+					resource.TestCheckResourceAttr(
+						"ansible_playbook.test",
+						"args.5",
+						"./.inventory.yml",
+					),
 					resource.TestCheckResourceAttr("ansible_playbook.test", "args.6", "--tags"),
-					resource.TestCheckResourceAttr("ansible_playbook.test", "args.7", "my_tag,my_second_tag"),
+					resource.TestCheckResourceAttr(
+						"ansible_playbook.test",
+						"args.7",
+						"my_tag,my_second_tag",
+					),
 					resource.TestCheckResourceAttr("ansible_playbook.test", "args.8", "--limit"),
-					resource.TestCheckResourceAttr("ansible_playbook.test", "args.9", "my_host,other_host"),
+					resource.TestCheckResourceAttr(
+						"ansible_playbook.test",
+						"args.9",
+						"my_host,other_host",
+					),
 					resource.TestCheckResourceAttr("ansible_playbook.test", "args.10", "--check"),
 					resource.TestCheckResourceAttr("ansible_playbook.test", "args.11", "--diff"),
-					resource.TestCheckResourceAttr("ansible_playbook.test", "args.12", "-e"),
-					resource.TestCheckResourceAttr("ansible_playbook.test", "args.13", "@./.vars"),
-					resource.TestCheckResourceAttr("ansible_playbook.test", "args.14", "-e"),
-					resource.TestCheckResourceAttr("ansible_playbook.test", "args.15", `{"my_variable":true}`),
-					resource.TestCheckResourceAttr("ansible_playbook.test", "args.16", "./.test.yml"),
+					resource.TestCheckResourceAttr("ansible_playbook.test", "args.12", "--become"),
+					resource.TestCheckResourceAttr("ansible_playbook.test", "args.13", "-e"),
+					resource.TestCheckResourceAttr("ansible_playbook.test", "args.14", "@./.vars"),
+					resource.TestCheckResourceAttr("ansible_playbook.test", "args.15", "-e"),
+					resource.TestCheckResourceAttr(
+						"ansible_playbook.test",
+						"args.16",
+						`{"my_variable":true}`,
+					),
+					resource.TestCheckResourceAttr(
+						"ansible_playbook.test",
+						"args.17",
+						"./.test.yml",
+					),
 				),
 			},
 			// Ensure idempotency
@@ -69,6 +94,7 @@ func testAccPlaybookResourceConfig() string {
 		name = "localhost"
 		extra_inventory_files = [ "${path.module}/.inventory.yml" ]
 		verbosity = 4
+    become = true
 		tags = [ "my_tag", "my_second_tag" ]
 		limit = [ "my_host", "other_host" ]
 		check_mode = true

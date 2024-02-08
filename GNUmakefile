@@ -1,4 +1,6 @@
-default: lint testacc docs build
+default: testacc docs build compress
+
+version = 2.0.6
 
 .PHONY: lint
 lint:
@@ -15,5 +17,9 @@ docs:
 
 .PHONY: build
 build:
-	go build -o terraform-provider-ansible-linux
-	GOOS=windows go build -o terraform-provider-ansible-windows.exe
+	CGO_ENABLED=0 go build -o terraform-provider-ansible_v$(version)
+	CGO_ENABLED=0 GOOS=windows go build -o terraform-provider-ansible_v$(version).exe
+
+.PHONY: compress
+compress:
+	VERSION=$(version) ./compress.sh

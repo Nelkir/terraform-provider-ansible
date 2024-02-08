@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"math/big"
-	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -39,7 +38,7 @@ type PlaybookResourceModel struct {
 	AnsiblePlaybookErr       types.String `tfsdk:"ansible_playbook_err"`
 	AnsiblePlaybookOutput    types.String `tfsdk:"ansible_playbook_output"`
 	Args                     types.List   `tfsdk:"args"`
-	Become                   types.Bool   `tfsdk:"ansible_playbook_become"`
+	Become                   types.Bool   `tfsdk:"become"`
 	CheckMode                types.Bool   `tfsdk:"check_mode"`
 	DiffMode                 types.Bool   `tfsdk:"diff_mode"`
 	ExtraInventoryFiles      types.List   `tfsdk:"extra_inventory_files"`
@@ -53,7 +52,6 @@ type PlaybookResourceModel struct {
 	OnDestroyPlaybook        types.String `tfsdk:"on_destroy_playbook"`
 	OnDestroyTimeout         types.Number `tfsdk:"on_destroy_timeout"`
 	Playbook                 types.String `tfsdk:"playbook"`
-	PlaybookSha256Sum        types.String `tfsdk:"playbook_sha256_sum"`
 	Replayable               types.Bool   `tfsdk:"replayable"`
 	RolesDirectories         types.List   `tfsdk:"roles_directories"`
 	Tags                     types.List   `tfsdk:"tags"`
@@ -86,9 +84,6 @@ func (r *PlaybookResource) Schema(
 			"playbook": schema.StringAttribute{
 				MarkdownDescription: "Path to ansible playbook.",
 				Required:            true,
-			},
-			"playbook_sha256_sum": schema.StringAttribute{
-				Computed: true,
 			},
 			"timeout": schema.NumberAttribute{
 				MarkdownDescription: "Timeout of the playbook execution. After this time, it will kill the process. In seconds",
@@ -151,7 +146,6 @@ func (r *PlaybookResource) Schema(
 			"become": schema.BoolAttribute{
 				MarkdownDescription: "Run playbook with become flag (true/false).",
 				Optional:            true,
-				Default:             booldefault.StaticBool(false),
 			},
 
 			// ansible execution commands
@@ -198,6 +192,7 @@ func (r *PlaybookResource) Schema(
 			"extra_vars": schema.StringAttribute{
 				MarkdownDescription: "A JSON dict of additional variables as: { key-1 = value-1, key-2 = value-2, ... }. Hint: use jsonencode()",
 				Optional:            true,
+				Sensitive:           true,
 				Validators: []validator.String{
 					jsonValidator{},
 				},
@@ -265,17 +260,6 @@ func (r *PlaybookResource) Create(
 		return
 	}
 
-	b, err := os.ReadFile(data.Playbook.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"can't read playbook",
-			"Unable to read the playbook: unexpected error: "+err.Error(),
-		)
-		return
-	}
-
-	data.PlaybookSha256Sum = types.StringValue(sha256Sum(b))
-
 	diags := r.runPlaybook(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -298,17 +282,6 @@ func (r *PlaybookResource) Read(
 		return
 	}
 
-	b, err := os.ReadFile(data.Playbook.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"can't read playbook",
-			"Unable to read the playbook: unexpected error: "+err.Error(),
-		)
-		return
-	}
-
-	data.PlaybookSha256Sum = types.StringValue(sha256Sum(b))
-
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -324,17 +297,6 @@ func (r *PlaybookResource) Update(
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	b, err := os.ReadFile(data.Playbook.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"can't read playbook",
-			"Unable to read the playbook: unexpected error: "+err.Error(),
-		)
-		return
-	}
-
-	data.PlaybookSha256Sum = types.StringValue(sha256Sum(b))
 
 	diags := r.runPlaybook(ctx, &data)
 	resp.Diagnostics.Append(diags...)

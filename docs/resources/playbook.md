@@ -22,10 +22,11 @@ Playbook resource
 ### Optional
 
 - `ansible_playbook_binary` (String) Path to ansible-playbook executable (binary).
+- `become` (Boolean) Run playbook with become flag (true/false).
 - `check_mode` (Boolean) If 'true', playbook execution won't make any changes but only change predictions will be made.
 - `diff_mode` (Boolean) If 'true', when changing (small) files and templates, differences in those files will be shown. Recommended usage with 'check_mode'.
 - `extra_inventory_files` (List of String) List of extra inventory files that the playbook will include, hint: use together with `ansible_host.inventory_path`
-- `extra_vars` (String) A JSON dict of additional variables as: { key-1 = value-1, key-2 = value-2, ... }. Hint: use jsonencode()
+- `extra_vars` (String, Sensitive) A JSON dict of additional variables as: { key-1 = value-1, key-2 = value-2, ... }. Hint: use jsonencode()
 - `force_handlers` (Boolean) If 'true', run handlers even if a task fails.
 - `groups` (List of String) List of desired groups of hosts on which the playbook will be executed.
 - `ignore_playbook_failure` (Boolean) This parameter is good for testing. Set to 'true' if the desired playbook is meant to fail, but still want the resource to run successfully.
@@ -49,4 +50,3 @@ Playbook resource
 - `ansible_playbook_err` (String) An ansible-playbook CLI stderr output.
 - `ansible_playbook_output` (String) An ansible-playbook CLI stdout output.
 - `args` (List of String) Used to build arguments to run Ansible playbook with.
-- `playbook_sha256_sum` (String)
